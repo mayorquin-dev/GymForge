@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="GymForge.API/GymForge.API.csproj" />
+  <Project Path="GymForge.Application/GymForge.Application.csproj" />
+  <Project Path="GymForge.Domain/GymForge.Domain.csproj" />
+  <Project Path="GymForge.Infrastructure/GymForge.Infrastructure.csproj" />
+</Solution>
