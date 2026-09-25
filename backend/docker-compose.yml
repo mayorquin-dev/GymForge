@@ -1,0 +1,13 @@
+services:
+  db-gymforge:
+    image: postgres:15-alpine        # la imagen oficial de PostgreSQL 15
+    container_name: postgres-gymforge
+    env_file:
+      - .env                         # lee usuario/contraseña del .env
+    ports:
+      - "5432:5432"                  # puerto de tu PC : puerto del contenedor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # guarda los datos aunque apagues el contenedor
+
+volumes:
+  postgres_data:
