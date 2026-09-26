@@ -1,6 +1,16 @@
-@GymForge.API_HostAddress = http://localhost:5270
+@host = http://localhost:5270
 
-GET {{GymForge.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Listar ejercicios (espera 200 OK)
+GET {{host}}/api/ejercicios
 
-###
+### 2. Crear un ejercicio (espera 201 Created)
+POST {{host}}/api/ejercicios
+Content-Type: application/json
+
+{ "nombre": "Sentadillas" }
+
+### 3. Nombre vacío (espera 400 Bad Request)
+POST {{host}}/api/ejercicios
+Content-Type: application/json
+
+{ "nombre": "" }
