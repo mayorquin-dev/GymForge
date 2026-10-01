@@ -1,20 +1,27 @@
-using Microsoft.EntityFrameworkCore;
-using GymForge.Infrastructure.Data;
-using GymForge.Application.Interfaces;
-using GymForge.Infrastructure.Repositories;
+using DotNetEnv;
+using GymForge.Infrastructure;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// A. Conexión a PostgreSQL (lee "PostgresConnection" de la configuración)
-builder.Services.AddDbContext<GymForgeDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
+// Lee el archivo .env (busca hacia carpetas superiores hasta encontrarlo)
+Env.TraversePath().Load();
 
-// B. Inversión de Dependencias:
-// "Cuando alguien pida IEjercicioRepository, entrégale un EjercicioRepository"
-builder.Services.AddScoped<IEjercicioRepository, EjercicioRepository>();
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__PostgresConnection")
+                       ?? throw new InvalidOperationException("Falta la cadena de conexión.");
 
+builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddControllers();
 
+// Genera la especificación OpenAPI (el "contrato" de la API en JSON)
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment()) {
+    app.MapOpenApi();              // /openapi/v1.json
+    app.MapScalarApiReference();   // /scalar/v1  (interfaz visual)
+}
+
 app.MapControllers();
 app.Run();
