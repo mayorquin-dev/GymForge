@@ -14,3 +14,9 @@ POST {{host}}/api/ejercicios
 Content-Type: application/json
 
 { "nombre": "" }
+
+### 4. Nombre muy corto (espera 400 por MinimumLength)
+POST {{host}}/api/ejercicios
+Content-Type: application/json
+
+{ "nombre": "ab" }

@@ -1,6 +1,7 @@
 using DotNetEnv;
 using GymForge.Infrastructure;
 using Scalar.AspNetCore;
+using GymForge.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Po
 
 builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddControllers();
+
+builder.Services.AddApplication();                  
+builder.Services.AddInfrastructure(connectionString);
 
 // Genera la especificación OpenAPI (el "contrato" de la API en JSON)
 builder.Services.AddOpenApi();
