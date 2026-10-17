@@ -20,3 +20,32 @@ POST {{host}}/api/ejercicios
 Content-Type: application/json
 
 { "nombre": "ab" }
+
+
+### ===== Clase 9: CRUD completo =====
+# Cambiá este número por un Id que exista (mirá la prueba 1)
+@id = 1
+
+### 5. Buscar por Id (espera 200 OK)
+GET {{host}}/api/ejercicios/{{id}}
+
+### 6. Buscar Id que no existe (espera 404 Not Found)
+GET {{host}}/api/ejercicios/9999
+
+### 7. Actualizar (espera 204 No Content)
+PUT {{host}}/api/ejercicios/{{id}}
+Content-Type: application/json
+
+{ "nombre": "Sentadillas con barra" }
+
+### 8. Actualizar con nombre inválido (espera 400 Bad Request)
+PUT {{host}}/api/ejercicios/{{id}}
+Content-Type: application/json
+
+{ "nombre": "ab" }
+
+### 9. Eliminar (espera 204 No Content)
+DELETE {{host}}/api/ejercicios/{{id}}
+
+### 10. Eliminar otra vez el mismo Id (espera 404 Not Found)
+DELETE {{host}}/api/ejercicios/{{id}}

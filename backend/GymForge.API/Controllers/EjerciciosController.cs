@@ -10,15 +10,19 @@ namespace GymForge.API.Controllers;
 [Route("api/[controller]")]
 public class EjerciciosController : ControllerBase {
     private readonly IEjercicioRepository _repository;
-    private readonly IValidator<CreateEjercicioRequestDto> _validator;
+    private readonly IValidator<CreateEjercicioRequestDto> _createValidator;
+    private readonly IValidator<UpdateEjercicioRequestDto> _updateValidator;
 
-    public EjerciciosController(IEjercicioRepository repository,
-        IValidator<CreateEjercicioRequestDto> validator) {
+    public EjerciciosController(
+        IEjercicioRepository repository,
+        IValidator<CreateEjercicioRequestDto> createValidator,
+        IValidator<UpdateEjercicioRequestDto> updateValidator) {
         _repository = repository;
-        _validator = validator;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
-    // GET /api/ejercicios -> devuelve DTOs, no entidades
+    // GET /api/ejercicios -> lista completa (200)
     [HttpGet]
     public async Task<IActionResult> GetEjercicios() {
         var ejercicios = await _repository.GetAllAsync();
@@ -26,30 +30,64 @@ public class EjerciciosController : ControllerBase {
             Id = e.Id,
             Nombre = e.Nombre
         });
-        return Ok(response); // 200
+        return Ok(response);
     }
 
-    // POST /api/ejercicios -> recibe un DTO, lo valida, lo convierte en entidad
-    [HttpPost]
-    public async Task<IActionResult> CrearEjercicio([FromBody] CreateEjercicioRequestDto request) {
-        var validationResult = await _validator.ValidateAsync(request);
-        if (!validationResult.IsValid) {
-            return BadRequest(validationResult.Errors); // 400 con la lista de errores
+    // GET /api/ejercicios/5 -> un ejercicio (200) o 404 si no existe
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetEjercicioById(int id) {
+        var ejercicio = await _repository.GetByIdAsync(id);
+        if (ejercicio is null) {
+            return NotFound($"No existe un ejercicio con Id {id}."); // 404
         }
 
-        // Mapeo manual: DTO -> Entidad
-        var nuevoEjercicio = new Ejercicio {
-            Nombre = request.Nombre
-        };
+        return Ok(new EjercicioResponseDto { Id = ejercicio.Id, Nombre = ejercicio.Nombre }); // 200
+    }
 
-        var creado = await _repository.AddAsync(nuevoEjercicio);
+    // POST /api/ejercicios -> crea (201) o 400 si no pasa la validación
+    [HttpPost]
+    public async Task<IActionResult> CrearEjercicio([FromBody] CreateEjercicioRequestDto request) {
+        var validationResult = await _createValidator.ValidateAsync(request);
+        if (!validationResult.IsValid) {
+            return BadRequest(validationResult.Errors); // 400
+        }
 
-        // Mapeo manual: Entidad -> DTO
-        var response = new EjercicioResponseDto {
-            Id = creado.Id,
-            Nombre = creado.Nombre
-        };
+        var creado = await _repository.AddAsync(new Ejercicio { Nombre = request.Nombre });
 
-        return CreatedAtAction(nameof(GetEjercicios), new { id = response.Id }, response); // 201
+        var response = new EjercicioResponseDto { Id = creado.Id, Nombre = creado.Nombre };
+
+        // 201 + header Location apuntando a GET /api/ejercicios/{id}
+        return CreatedAtAction(nameof(GetEjercicioById), new { id = response.Id }, response);
+    }
+
+    // PUT /api/ejercicios/5 -> actualiza (204), 400 si no valida, 404 si no existe
+    [HttpPut("{id}")]
+    public async Task<IActionResult> ActualizarEjercicio(int id, [FromBody] UpdateEjercicioRequestDto request) {
+        var validationResult = await _updateValidator.ValidateAsync(request);
+        if (!validationResult.IsValid) {
+            return BadRequest(validationResult.Errors); // 400
+        }
+
+        var ejercicio = await _repository.GetByIdAsync(id);
+        if (ejercicio is null) {
+            return NotFound($"No existe un ejercicio con Id {id}."); // 404
+        }
+
+        ejercicio.Nombre = request.Nombre; // Mapeo manual: DTO -> Entidad existente
+        await _repository.UpdateAsync(ejercicio);
+
+        return NoContent(); // 204
+    }
+
+    // DELETE /api/ejercicios/5 -> elimina (204) o 404 si no existe
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> EliminarEjercicio(int id) {
+        var ejercicio = await _repository.GetByIdAsync(id);
+        if (ejercicio is null) {
+            return NotFound($"No existe un ejercicio con Id {id}."); // 404
+        }
+
+        await _repository.DeleteAsync(ejercicio);
+        return NoContent(); // 204
     }
 }
