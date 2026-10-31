@@ -21,7 +21,7 @@ Content-Type: application/json
 
 { "nombre": "ab" }
 
-
+ 
 ### ===== Clase 9: CRUD completo =====
 # Cambiá este número por un Id que exista (mirá la prueba 1)
 @id = 1
