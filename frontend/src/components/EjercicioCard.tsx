@@ -1,7 +1,7 @@
 
 
 // --- ZONA 1: EL CONTRATO (INTERFAZ) ---
-interface EjercicioProps {
+export interface EjercicioProps {
     id: number;
     nombre: string;
 }
