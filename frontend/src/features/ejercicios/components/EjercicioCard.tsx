@@ -1,15 +1,8 @@
+// src/features/ejercicios/components/EjercicioCard.tsx
+import type { Ejercicio } from '../types/ejercicio.types'
 
-
-// --- ZONA 1: EL CONTRATO (INTERFAZ) ---
-export interface EjercicioProps {
-    id: number;
-    nombre: string;
-}
-
-// --- ZONA 2: LA FIRMA ---
-export function EjercicioCard({ id, nombre }: EjercicioProps) {
-
-    // --- ZONA 4: EL RENDERIZADO (APLICANDO DESIGN TOKENS) ---
+// Componente presentacional: solo recibe datos y los pinta
+export function EjercicioCard({ id, nombre }: Ejercicio) {
     return (
         <article className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col justify-between hover:border-indigo-500 transition-colors shadow-sm">
             <div>
