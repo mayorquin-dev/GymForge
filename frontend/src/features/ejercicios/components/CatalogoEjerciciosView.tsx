@@ -1,22 +1,30 @@
 // src/features/ejercicios/components/CatalogoEjerciciosView.tsx
 import { useState, useEffect } from 'react'
 import type { Ejercicio } from '../types/ejercicio.types'
-import { obtenerEjerciciosAsync } from '../api/ejerciciosApi'
+import { obtenerEjerciciosAsync, extraerMensajeErrorBackend } from '../api/ejerciciosApi'
 import { EjercicioCard } from './EjercicioCard'
 
-// Vista del módulo: tiene el estado, la carga de datos y la rejilla
 export function CatalogoEjerciciosView() {
   // --- ZONA 3: CEREBRO DEL MÓDULO ---
   const [ejercicios, setEjercicios] = useState<Ejercicio[]>([])
   const [cargando, setCargando] = useState<boolean>(true)
+  const [errorRed, setErrorRed] = useState<string | null>(null)
   const [busqueda, setBusqueda] = useState<string>('')
 
+  // GET real a .NET al montar el componente
   useEffect(() => {
-    // Pedimos los datos a la capa de servicio (api/ejerciciosApi.ts)
-    obtenerEjerciciosAsync().then((datos) => {
-      setEjercicios(datos)
-      setCargando(false)
-    })
+    obtenerEjerciciosAsync()
+      .then((datosDesdePostgres) => {
+        setEjercicios(datosDesdePostgres)
+        setErrorRed(null)
+      })
+      .catch((error) => {
+        console.error('Fallo en la comunicación HTTP con .NET:', error)
+        setErrorRed(extraerMensajeErrorBackend(error))
+      })
+      .finally(() => {
+        setCargando(false) // se apaga tanto si hubo éxito como si hubo error
+      })
   }, [])
 
   const ejerciciosFiltrados = ejercicios.filter((ejercicio) =>
@@ -30,7 +38,7 @@ export function CatalogoEjerciciosView() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">Catálogo de Ejercicios</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Módulo desacoplado bajo arquitectura <code className="text-indigo-400 font-mono">Vertical Slicing</code>.
+            Conectado en tiempo real vía <code className="text-indigo-400 font-mono">HTTP/CORS</code> con PostgreSQL.
           </p>
         </div>
 
@@ -48,17 +56,29 @@ export function CatalogoEjerciciosView() {
           className="w-full sm:max-w-md bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
         />
         <span className="text-xs text-slate-400">
-          Mostrando <strong className="text-white">{ejerciciosFiltrados.length}</strong> de {ejercicios.length} ejercicios
+          Mostrando <strong className="text-white">{ejerciciosFiltrados.length}</strong> de {ejercicios.length} registros en BD
         </span>
       </div>
 
-      {cargando ? (
+      {/* 1. Cargando */}
+      {cargando && (
         <div className="bg-slate-800/50 border border-slate-800 rounded-xl p-12 text-center">
           <p className="text-indigo-400 font-semibold animate-pulse text-lg">
-            ⏳ Consultando capa de servicios (ejerciciosApi.ts)...
+            ⏳ Consultando GET /api/ejercicios en .NET...
           </p>
         </div>
-      ) : (
+      )}
+
+      {/* 2. Error de red o bloqueo CORS */}
+      {!cargando && errorRed && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-8 text-center">
+          <p className="text-red-400 font-semibold text-lg mb-2">🚨 Error de Comunicación Full-Stack</p>
+          <p className="text-red-300 text-sm">{errorRed}</p>
+        </div>
+      )}
+
+      {/* 3. Éxito: tarjetas con los registros reales de PostgreSQL */}
+      {!cargando && !errorRed && (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {ejerciciosFiltrados.map((ejercicio) => (
             <EjercicioCard
