@@ -1,8 +1,13 @@
 // src/features/ejercicios/components/EjercicioCard.tsx
 import type { Ejercicio } from '../types/ejercicio.types'
 
-// Componente presentacional: solo recibe datos y los pinta
-export function EjercicioCard({ id, nombre }: Ejercicio) {
+interface EjercicioCardProps extends Ejercicio {
+    onEliminar: (id: number) => void;   // Clase 17: el padre decide qué hacer al eliminar
+    eliminando: boolean;                // true mientras viaja el DELETE de esta tarjeta
+}
+
+// Componente presentacional: recibe datos y avisa al padre, no llama a la API
+export function EjercicioCard({ id, nombre, onEliminar, eliminando }: EjercicioCardProps) {
     return (
         <article className="bg-slate-800 border border-slate-700 rounded-xl p-5 flex flex-col justify-between hover:border-indigo-500 transition-colors shadow-sm">
             <div>
@@ -10,7 +15,14 @@ export function EjercicioCard({ id, nombre }: Ejercicio) {
                     <span className="bg-indigo-500/10 text-indigo-400 text-xs font-semibold px-2.5 py-1 rounded-md border border-indigo-500/20">
                         ID Catálogo #{id}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">Catálogo Base</span>
+                    <button
+                        onClick={() => onEliminar(id)}
+                        disabled={eliminando}
+                        title="Eliminar del catálogo"
+                        className="text-xs text-slate-400 hover:text-red-400 font-medium px-2 py-1 rounded-md hover:bg-red-500/10 transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-50"
+                    >
+                        {eliminando ? '⏳ Eliminando...' : '🗑️ Eliminar'}
+                    </button>
                 </div>
 
                 <h3 className="text-lg font-bold text-white mb-5">

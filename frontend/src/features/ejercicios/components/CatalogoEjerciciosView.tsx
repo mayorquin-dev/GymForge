@@ -1,8 +1,9 @@
 // src/features/ejercicios/components/CatalogoEjerciciosView.tsx
 import { useState, useEffect } from 'react'
 import type { Ejercicio } from '../types/ejercicio.types'
-import { obtenerEjerciciosAsync, extraerMensajeErrorBackend } from '../api/ejerciciosApi'
+import { obtenerEjerciciosAsync, eliminarEjercicioAsync, extraerMensajeErrorBackend } from '../api/ejerciciosApi'
 import { EjercicioCard } from './EjercicioCard'
+import { CrearEjercicioForm } from './CrearEjercicioForm'
 
 export function CatalogoEjerciciosView() {
   // --- ZONA 3: CEREBRO DEL MÓDULO ---
@@ -10,8 +11,11 @@ export function CatalogoEjerciciosView() {
   const [cargando, setCargando] = useState<boolean>(true)
   const [errorRed, setErrorRed] = useState<string | null>(null)
   const [busqueda, setBusqueda] = useState<string>('')
+  const [mostrarFormulario, setMostrarFormulario] = useState<boolean>(false)
+  const [eliminandoId, setEliminandoId] = useState<number | null>(null)
+  const [errorAccion, setErrorAccion] = useState<string | null>(null)
 
-  // GET real a .NET al montar el componente
+  // Clase 15: GET real a .NET al montar el componente
   useEffect(() => {
     obtenerEjerciciosAsync()
       .then((datosDesdePostgres) => {
@@ -26,6 +30,29 @@ export function CatalogoEjerciciosView() {
         setCargando(false) // se apaga tanto si hubo éxito como si hubo error
       })
   }, [])
+
+  // Clase 16: agregamos el nuevo ejercicio SIN otro GET, con un arreglo nuevo (inmutabilidad)
+  const manejarEjercicioCreado = (nuevoDesdeBD: Ejercicio) => {
+    setEjercicios((actuales) => [...actuales, nuevoDesdeBD])
+    setMostrarFormulario(false)
+  }
+
+  // Clase 17: DELETE real a .NET y quitamos la tarjeta con .filter() (también inmutable)
+  const manejarEliminar = async (id: number) => {
+    if (!window.confirm(`¿Eliminar el ejercicio #${id} del catálogo?`)) return
+
+    try {
+      setEliminandoId(id)
+      setErrorAccion(null)
+      await eliminarEjercicioAsync(id)
+      setEjercicios((actuales) => actuales.filter((ejercicio) => ejercicio.id !== id))
+    } catch (error) {
+      console.error('🚨 No se pudo eliminar:', error)
+      setErrorAccion(extraerMensajeErrorBackend(error))
+    } finally {
+      setEliminandoId(null)
+    }
+  }
 
   const ejerciciosFiltrados = ejercicios.filter((ejercicio) =>
     ejercicio.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -42,10 +69,31 @@ export function CatalogoEjerciciosView() {
           </p>
         </div>
 
-        <button className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-4 py-2.5 rounded-lg transition-colors shadow-sm self-start sm:self-auto cursor-pointer">
-          + Nuevo Ejercicio
-        </button>
+        {!mostrarFormulario && (
+          <button
+            onClick={() => setMostrarFormulario(true)}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-4 py-2.5 rounded-lg transition-colors shadow-sm self-start sm:self-auto cursor-pointer"
+          >
+            + Nuevo Ejercicio
+          </button>
+        )}
       </div>
+
+      {/* Formulario POST (solo cuando se pide) */}
+      {mostrarFormulario && (
+        <CrearEjercicioForm
+          onEjercicioCreado={manejarEjercicioCreado}
+          onCancelar={() => setMostrarFormulario(false)}
+        />
+      )}
+
+      {/* Error al eliminar */}
+      {errorAccion && (
+        <div className="mb-6 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex justify-between gap-4">
+          <span>🚨 {errorAccion}</span>
+          <button onClick={() => setErrorAccion(null)} className="text-red-300 hover:text-white cursor-pointer">✕</button>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <input
@@ -85,6 +133,8 @@ export function CatalogoEjerciciosView() {
               key={ejercicio.id}
               id={ejercicio.id}
               nombre={ejercicio.nombre}
+              onEliminar={manejarEliminar}
+              eliminando={eliminandoId === ejercicio.id}
             />
           ))}
         </section>
